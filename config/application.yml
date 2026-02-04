@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: k-cache-service
+  datasource:
+    url: jdbc:h2:file:./db/data/k-cache-db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+    username: admin
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /db/h2-console
+
+server:
+  port: 5500
+
+cache:
+  max-size: 10
