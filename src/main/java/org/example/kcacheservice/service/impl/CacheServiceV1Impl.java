@@ -1,4 +1,4 @@
-package service.impl;
+package org.example.kcacheservice.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -6,24 +6,26 @@ import org.example.kcacheservice.config.CacheConfig;
 import org.example.kcacheservice.dto.ApiResponseEnvelop;
 import org.example.kcacheservice.dto.CacheDTO;
 import org.example.kcacheservice.entity.CacheEntity;
+import org.example.kcacheservice.exception.CacheException;
+import org.example.kcacheservice.exception.CacheNotFoundException;
 import org.example.kcacheservice.repository.CacheRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
-import service.CacheService;
+import org.example.kcacheservice.service.CacheService;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-@Service
+@Service("CacheServiceV1")
 @Slf4j
-public class CacheServiceImpl implements CacheService {
+public class CacheServiceV1Impl implements CacheService {
 
     private final Map<String, CacheDTO> cache;
     private final ReentrantReadWriteLock lock;
     private final CacheRepository cacheRepository;
     private final CacheConfig cacheConfig;
 
-    public CacheServiceImpl(CacheConfig cacheConfig, CacheRepository cacheRepository) {
+    public CacheServiceV1Impl(CacheConfig cacheConfig, CacheRepository cacheRepository) {
         this.cache = new LinkedHashMap<>(cacheConfig.getMaxSize(), 0.75f, true);
         this.lock = new ReentrantReadWriteLock();
         this.cacheRepository = cacheRepository;
@@ -74,7 +76,7 @@ public class CacheServiceImpl implements CacheService {
             return ApiResponseEnvelop.success(record);
         } catch(Exception e) {
             log.error("Error while acquiring write lock", e);
-            return ApiResponseEnvelop.error(new ArrayList<>() {{
+            throw new CacheException(e.getMessage(), new ArrayList<>() {{
                 add("Error while adding record to cache: " + e.getMessage());
             }});
         } finally {
@@ -111,9 +113,7 @@ public class CacheServiceImpl implements CacheService {
             Optional<CacheEntity> cacheEntity = this.cacheRepository.findById(key);
             if(cacheEntity.isEmpty()) {
                 log.debug("Record with key {} not found in cache or DB", key);
-                return ApiResponseEnvelop.error(new ArrayList<>() {{
-                    add("Record with key " + key + " not found in cache or DB");
-                }});
+                throw new CacheNotFoundException("Record with key " + key + " not found in cache or DB");
             }
             cacheRepository.deleteById(key);
             CacheDTO record = CacheDTO.builder()
@@ -126,13 +126,15 @@ public class CacheServiceImpl implements CacheService {
             }
             this.cache.put(key, record);
             return ApiResponseEnvelop.success(record);
+        } catch(CacheException e) {
+            throw e;
         } catch(Exception e) {
-            log.error("Error while acquiring read lock", e);
-            return ApiResponseEnvelop.error(new ArrayList<>() {{
+            log.error("Generic Exception", e);
+            throw new CacheException(e.getMessage(), new ArrayList<>() {{
                 add("Error while fetching record from cache: " + e.getMessage());
             }});
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
             log.trace("Released read lock");
         }
     }
@@ -159,6 +161,8 @@ public class CacheServiceImpl implements CacheService {
                 }
             }
             return ApiResponseEnvelop.success(null);
+        } catch(CacheException e) {
+            throw e;
         } catch(Exception e) {
             log.error("Error while deleting record from cache", e);
             return ApiResponseEnvelop.error(new ArrayList<>() {{
@@ -180,6 +184,8 @@ public class CacheServiceImpl implements CacheService {
             this.cache.clear();
             this.cacheRepository.deleteAllInBatch();
             return ApiResponseEnvelop.success(null);
+        } catch(CacheException e) {
+            throw e;
         } catch(Exception e) {
             log.error("Error while deleting all records from cache", e);
             return ApiResponseEnvelop.error(new ArrayList<>() {{
@@ -200,6 +206,8 @@ public class CacheServiceImpl implements CacheService {
             log.trace("Acquired write lock");
             this.cache.clear();
             return ApiResponseEnvelop.success(null);
+        } catch(CacheException e) {
+            throw e;
         } catch(Exception e) {
             return ApiResponseEnvelop.error(new ArrayList<>() {{
                 add("Error while clearing cache: " + e.getMessage());

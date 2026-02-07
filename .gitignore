@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Log Directory ###
+logs/
+
+### database ###
+*.db
+
+### PID file ###
+*.pid

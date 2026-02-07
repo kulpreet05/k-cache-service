@@ -1,5 +1,6 @@
 package org.example.kcacheservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -9,7 +10,9 @@ import java.util.List;
 @ToString
 public class ApiResponseEnvelop<T> {
     private final String status;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final T data;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final List<String> errors;
 
     private ApiResponseEnvelop(String status, T data, List<String> errors) {

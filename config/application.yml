@@ -1,6 +1,9 @@
 spring:
   application:
     name: k-cache-service
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: jdbc:h2:file:./db/data/k-cache-db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
     username: admin
@@ -17,6 +20,17 @@ spring:
 
 server:
   port: 5500
+  servlet:
+    context-path: /kCacheService/api
 
 cache:
-  max-size: 10
+  max-size: 5
+
+logging:
+  level:
+    org.example.kcacheservice: debug
+    org.springframework.web: info
+    org.hibernate.SQL: info
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+
