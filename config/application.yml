@@ -28,7 +28,7 @@ cache:
 
 logging:
   level:
-    org.example.kcacheservice: debug
+    org.example.kcacheservice: info
     org.springframework.web: info
     org.hibernate.SQL: info
   pattern:
